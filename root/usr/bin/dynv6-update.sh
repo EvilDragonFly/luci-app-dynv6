@@ -78,6 +78,18 @@ dynv6_update_loop()
   done
 }
 
+wait_for_ipv6()                                                 
+{                                                               
+        ifstatus $1                                             
+        time=0                                                  
+        while [ -z "$(ifstatus $1 | grep l3_device)"  ]                                     
+        do                                                                                  
+                echo "wait ${time}s"                                                        
+                sleep 10s                                                                   
+                time=$((time+10))                                                           
+        done                                                                                
+}
+
 site_foreach()
 {
     load_site_cb(){
@@ -89,6 +101,11 @@ site_foreach()
         config_get token "$site" "token"
         config_get interface "$site" "interface" "any"
         config_get interval "$site" "interval" "60"
+        ##### wait ipv6 #######################
+        echo "start to wait for getting ipv6" #
+        wait_for_ipv6 $interface              #
+        echo "got ipv6"                       #
+        ##### wait ipv6 #######################
         device="$(ifstatus $interface 2>/dev/null| jsonfilter -e '@.l3_device' 2>/dev/null)"
         [ -z $device ] && device="any"
         [ -n "$zone" ] && [ -n "$device" ] && [ -n "$token" ] && {
